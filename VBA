@@ -1,0 +1,139 @@
+Function AskAI(prompt As String, Optional max_words As Long = 0) As String
+
+    Dim httpRequest As Object
+    Dim apiResponse As String
+    Dim apiUrl As String
+    Dim apiKey As String
+    Dim finalResponse As String
+    Dim statusCode As Long
+
+    ' API Information
+    apiUrl = "https://api.openai.com/v1/chat/completions"
+    apiKey = "sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+
+    ' Adjust prompt based on word limit
+    If max_words > 0 Then
+        prompt = prompt & ". Provide response in maximum " & max_words & " words"
+    End If
+
+    prompt = Replace(prompt, Chr(34), Chr(39))
+    prompt = Replace(prompt, vbLf, " ")
+
+    ' Initialize and send API request
+    Set httpRequest = CreateObject("MSXML2.XMLHTTP")
+    On Error GoTo ErrorHandler
+    With httpRequest
+        .Open "POST", apiUrl, False
+        .setRequestHeader "Content-Type", "application/json"
+        .setRequestHeader "Authorization", "Bearer " & apiKey
+        .send "{""model"": ""gpt-4o"", ""messages"": [{" & _
+               """role"":""system"",""content"":""You are ExcelGPT, a powerful AI designed to assist with Excel tasks and provide accurate information within the Excel environment. Consider the user's request; they may only be looking for a one-word answer, and not an explanation or extra context. For example, they may have a list of cities and ask for the country of each city; one-word answers would be appropriate here.""}," & _
+               "{""role"":""user"",""content"":""" & prompt & """}]," & _
+               """temperature"": 0, ""top_p"": 1, ""max_tokens"": 2048}"
+        statusCode = .Status
+        apiResponse = .responseText
+    End With
+
+    ' Debug: Output the raw JSON response
+    Debug.Print "JSON Response: " & apiResponse
+
+    ' Process API response
+    If statusCode = 200 Then
+        finalResponse = ParseContent(apiResponse)
+    Else
+        finalResponse = ParseError(apiResponse)
+    End If
+
+    If max_words > 0 And Right(finalResponse, 1) = "." Then
+        finalResponse = Left(finalResponse, Len(finalResponse) - 1)
+    End If
+
+    AskAI = finalResponse
+    Exit Function
+
+ErrorHandler:
+    finalResponse = "Error: " & Err.Description
+    AskAI = finalResponse
+End Function
+
+Function ParseContent(jsonData As String) As String
+    On Error GoTo ContentErrorHandler
+    Dim startPos As Long
+    Dim endPos As Long
+    Dim contentText As String
+
+    ' Debug: Print the jsonData to check its structure
+    Debug.Print "ParseContent jsonData: " & jsonData
+
+    ' Find the start position of the content field
+    startPos = InStr(jsonData, """content"": """) + Len("""content"": """)
+    Debug.Print "startPos: " & startPos
+    If startPos = Len("""content"": """) Then
+        ParseContent = "Error: Could not find start position for content."
+        Exit Function
+    End If
+
+    ' Find the end position of the content field
+    endPos = InStr(startPos, jsonData, """")
+    Debug.Print "endPos: " & endPos
+    If endPos <= startPos Then
+        ParseContent = "Error: Could not find end position for content."
+        Exit Function
+    End If
+
+    contentText = Mid(jsonData, startPos, endPos - startPos)
+    Debug.Print "contentText: " & contentText
+    contentText = Trim(Replace(contentText, "\""", Chr(34)))
+
+    ' Fix for Excel formulas as response
+    If Left(Trim(contentText), 1) = "=" Then
+        contentText = "'" & contentText
+    End If
+
+    contentText = Replace(contentText, vbCrLf, "")
+    contentText = Replace(contentText, vbLf, "")
+    contentText = Replace(contentText, vbCr, "")
+    contentText = Replace(contentText, "\n", vbCrLf)
+
+    If Right(contentText, 1) = """" Then
+        contentText = Left(contentText, Len(contentText) - 1)
+    End If
+
+    ParseContent = contentText
+    Exit Function
+
+ContentErrorHandler:
+    ParseContent = "Content extraction error: " & Err.Description
+End Function
+
+Function ParseError(jsonData As String) As String
+    On Error GoTo ErrorParsingError
+    Dim startPos As Long
+    Dim endPos As Long
+    Dim errorMessage As String
+
+    ' Debug: Print the jsonData to check its structure
+    Debug.Print "ParseError jsonData: " & jsonData
+
+    startPos = InStr(jsonData, """message"": """) + Len("""message"": """)
+    endPos = InStr(startPos, jsonData, """", startPos + 1)
+    If startPos > Len("""message"": """) And endPos > startPos Then
+        errorMessage = Mid(jsonData, startPos, endPos - startPos)
+    Else
+        startPos = InStr(jsonData, """code"": """) + Len("""code"": """)
+        endPos = InStr(startPos, jsonData, """", startPos + 1)
+        If startPos > Len("""code"": """) And endPos > startPos Then
+            errorMessage = Mid(jsonData, startPos, endPos - startPos)
+        Else
+            errorMessage = "Unknown error"
+        End If
+    End If
+
+    ParseError = errorMessage
+    Exit Function
+
+ErrorParsingError:
+    ParseError = "Error extraction error: " & Err.Description
+End Function
+
+
