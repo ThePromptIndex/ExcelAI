@@ -1,6 +1,6 @@
-# ExcelGPT Assistant
+# ExcelAI Assistant
 
-ExcelGPT Assistant is a VBA-based tool that integrates with the OpenAI GPT-4 API to provide intelligent responses directly within the Excel environment. This assistant can help users with a variety of Excel tasks by providing accurate and context-aware responses.
+ExcelAI Assistant is a VBA-based tool that integrates with the OpenAI GPT-4 API to provide intelligent responses directly within the Excel environment. This assistant can help users with a variety of Excel tasks by providing accurate and context-aware responses.
 
 ![Untitled design (4)](https://github.com/ThePromptIndex/ExcelAI/assets/144904800/8159ff51-52b8-4001-9cfe-f111163b9ced)
 
