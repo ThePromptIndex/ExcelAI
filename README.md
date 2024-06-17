@@ -5,6 +5,7 @@ ExcelAI Assistant is a VBA-based tool that integrates with the OpenAI GPT-4 API 
 ![Untitled design (4)](https://github.com/ThePromptIndex/ExcelAI/assets/144904800/8159ff51-52b8-4001-9cfe-f111163b9ced)
 
 If you enjoyed this sort of stuff then [sign up to our newsletter](https://www.thepromptindex.com/newsletter.html).
+Looking to learn? Check out [The Ministry of AI](https://www.theministryofai.org).
 
 **Features**
 
